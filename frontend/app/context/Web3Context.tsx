@@ -225,7 +225,9 @@ export function Web3Provider({ children }: Web3ProviderProps) {
 
     try {
       const rep = await contract.reputation(address);
-      setReputation(Number(rep));
+      const repValue = Number(rep);
+      setReputation(repValue);
+      console.log("Reputation for", address, ":", repValue);
     } catch (error) {
       console.error("Error fetching reputation:", error);
     }
@@ -238,6 +240,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     try {
       const count = await contract.poolCount();
       setPoolCount(Number(count));
+      console.log("Total pool count:", Number(count));
 
       const poolsData: PoolDisplay[] = [];
       for (let i = 1; i <= Number(count); i++) {
@@ -277,12 +280,14 @@ export function Web3Provider({ children }: Web3ProviderProps) {
             roundDeadline: Number(roundDeadline),
             status,
           });
+          console.log(`Pool ${i}:`, poolsData[poolsData.length - 1]);
         } catch (error) {
           console.error(`Error fetching pool ${i}:`, error);
         }
       }
 
       setPools(poolsData);
+      console.log("All pools loaded:", poolsData.length);
     } catch (error) {
       console.error("Error fetching pools:", error);
     }
@@ -293,19 +298,23 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     async (contributionAmount: string, maxMembers: number, minReputation: number, roundDuration: number) => {
       if (!contract) throw new Error("Contract not initialized");
 
+      console.log("Creating pool with:", { contributionAmount, maxMembers, minReputation, roundDuration });
       const tx = await contract.createPool(
         parseEther(contributionAmount),
         maxMembers,
         minReputation,
         roundDuration
       );
+      console.log("Transaction sent:", tx.hash);
       const receipt = await tx.wait();
+      console.log("Transaction confirmed:", receipt);
       
       // Get pool ID from event
       const event = receipt.logs.find((log: { fragment?: { name: string } }) => 
         log.fragment?.name === "PoolCreated"
       );
       const poolId = event ? Number(event.args[0]) : Number(await contract.poolCount());
+      console.log("Pool created with ID:", poolId);
       
       await refreshPools();
       return poolId;
@@ -318,10 +327,13 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     async (poolId: number, amount: string) => {
       if (!contract) throw new Error("Contract not initialized");
 
+      console.log("Joining pool:", poolId, "with amount:", amount);
       const tx = await contract.joinPool(poolId, {
         value: parseEther(amount),
       });
-      await tx.wait();
+      console.log("Join transaction sent:", tx.hash);
+      const receipt = await tx.wait();
+      console.log("Join transaction confirmed:", receipt);
       await refreshPools();
       await refreshReputation();
     },
@@ -333,8 +345,11 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     async (poolId: number) => {
       if (!contract) throw new Error("Contract not initialized");
 
+      console.log("Distributing pool:", poolId);
       const tx = await contract.distribute(poolId);
-      await tx.wait();
+      console.log("Distribute transaction sent:", tx.hash);
+      const receipt = await tx.wait();
+      console.log("Distribute transaction confirmed:", receipt);
       await refreshPools();
       await refreshReputation();
     },
@@ -365,6 +380,19 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       refreshPools();
       refreshReputation();
     }
+  }, [isConnected, isCorrectNetwork, refreshPools, refreshReputation]);
+
+  // Auto-refresh pools and reputation every 15 seconds
+  useEffect(() => {
+    if (!isConnected || !isCorrectNetwork) return;
+
+    const interval = setInterval(() => {
+      console.log("Auto-refreshing pools and reputation...");
+      refreshPools();
+      refreshReputation();
+    }, 5000); // 5 seconds
+
+    return () => clearInterval(interval);
   }, [isConnected, isCorrectNetwork, refreshPools, refreshReputation]);
 
   const value: Web3ContextType = {
