@@ -227,7 +227,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       const rep = await contract.reputation(address);
       const repValue = Number(rep);
       setReputation(repValue);
-      console.log("Reputation for", address, ":", repValue);
+      console.log("👤 Reputation:", repValue);
     } catch (error) {
       console.error("Error fetching reputation:", error);
     }
@@ -239,11 +239,13 @@ export function Web3Provider({ children }: Web3ProviderProps) {
 
     try {
       const count = await contract.poolCount();
-      setPoolCount(Number(count));
-      console.log("Total pool count:", Number(count));
+      const poolCountNum = Number(count);
+      setPoolCount(poolCountNum);
+      console.log("📊 Total pool count:", poolCountNum);
 
       const poolsData: PoolDisplay[] = [];
-      for (let i = 1; i <= Number(count); i++) {
+      // Pools are 0-indexed in the contract
+      for (let i = 0; i < poolCountNum; i++) {
         try {
           const poolData = await contract.getPool(i);
           const [
@@ -280,14 +282,18 @@ export function Web3Provider({ children }: Web3ProviderProps) {
             roundDeadline: Number(roundDeadline),
             status,
           });
-          console.log(`Pool ${i}:`, poolsData[poolsData.length - 1]);
-        } catch (error) {
-          console.error(`Error fetching pool ${i}:`, error);
+        } catch (error: any) {
+          // Skip non-existent pools silently (gaps in pool IDs)
+          if (error?.message?.includes("Pool does not exist") || error?.reason?.includes("Pool does not exist")) {
+            // Don't log for every refresh to avoid console spam
+            continue;
+          }
+          console.error(`Error fetching pool ${i}:`, error?.message || error);
         }
       }
 
       setPools(poolsData);
-      console.log("All pools loaded:", poolsData.length);
+      console.log(`✅ Loaded ${poolsData.length} pools`);
     } catch (error) {
       console.error("Error fetching pools:", error);
     }
@@ -298,26 +304,36 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     async (contributionAmount: string, maxMembers: number, minReputation: number, roundDuration: number) => {
       if (!contract) throw new Error("Contract not initialized");
 
-      console.log("Creating pool with:", { contributionAmount, maxMembers, minReputation, roundDuration });
-      const tx = await contract.createPool(
-        parseEther(contributionAmount),
-        maxMembers,
-        minReputation,
-        roundDuration
-      );
-      console.log("Transaction sent:", tx.hash);
-      const receipt = await tx.wait();
-      console.log("Transaction confirmed:", receipt);
-      
-      // Get pool ID from event
-      const event = receipt.logs.find((log: { fragment?: { name: string } }) => 
-        log.fragment?.name === "PoolCreated"
-      );
-      const poolId = event ? Number(event.args[0]) : Number(await contract.poolCount());
-      console.log("Pool created with ID:", poolId);
-      
-      await refreshPools();
-      return poolId;
+      try {
+        console.log("Creating pool with:", { contributionAmount, maxMembers, minReputation, roundDuration });
+        const tx = await contract.createPool(
+          parseEther(contributionAmount),
+          maxMembers,
+          minReputation,
+          roundDuration
+        );
+        console.log("Transaction sent:", tx.hash);
+        const receipt = await tx.wait();
+        console.log("Transaction confirmed:", receipt);
+        
+        // Get pool ID from event
+        const event = receipt.logs.find((log: { fragment?: { name: string } }) => 
+          log.fragment?.name === "PoolCreated"
+        );
+        const poolId = event ? Number(event.args[0]) : Number(await contract.poolCount()) - 1;
+        console.log("✅ Pool created with ID:", poolId);
+        
+        await refreshPools();
+        return poolId;
+      } catch (error: any) {
+        console.error("Error creating pool:", error);
+        if (error?.message?.includes("Contribution must be > 0")) {
+          throw new Error("Contribution amount must be greater than 0");
+        } else if (error?.message?.includes("Need at least 2 members")) {
+          throw new Error("Pool must have at least 2 members");
+        }
+        throw error;
+      }
     },
     [contract, refreshPools]
   );
@@ -327,15 +343,27 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     async (poolId: number, amount: string) => {
       if (!contract) throw new Error("Contract not initialized");
 
-      console.log("Joining pool:", poolId, "with amount:", amount);
-      const tx = await contract.joinPool(poolId, {
-        value: parseEther(amount),
-      });
-      console.log("Join transaction sent:", tx.hash);
-      const receipt = await tx.wait();
-      console.log("Join transaction confirmed:", receipt);
-      await refreshPools();
-      await refreshReputation();
+      try {
+        console.log("Joining pool:", poolId, "with amount:", amount);
+        const tx = await contract.joinPool(poolId, {
+          value: parseEther(amount),
+        });
+        console.log("Join transaction sent:", tx.hash);
+        const receipt = await tx.wait();
+        console.log("Join transaction confirmed:", receipt);
+        await refreshPools();
+        await refreshReputation();
+      } catch (error: any) {
+        console.error("Error joining pool:", error);
+        if (error?.message?.includes("Reputation too low")) {
+          throw new Error("Your reputation is too low for this pool. Build reputation by completing pools with no minimum requirement.");
+        } else if (error?.message?.includes("Pool is full")) {
+          throw new Error("This pool is already full.");
+        } else if (error?.message?.includes("Already joined")) {
+          throw new Error("You have already joined this pool.");
+        }
+        throw error;
+      }
     },
     [contract, refreshPools, refreshReputation]
   );
@@ -345,13 +373,24 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     async (poolId: number) => {
       if (!contract) throw new Error("Contract not initialized");
 
-      console.log("Distributing pool:", poolId);
-      const tx = await contract.distribute(poolId);
-      console.log("Distribute transaction sent:", tx.hash);
-      const receipt = await tx.wait();
-      console.log("Distribute transaction confirmed:", receipt);
-      await refreshPools();
-      await refreshReputation();
+      try {
+        console.log("Distributing pool:", poolId);
+        const tx = await contract.distribute(poolId);
+        console.log("Distribute transaction sent:", tx.hash);
+        const receipt = await tx.wait();
+        console.log("Distribute transaction confirmed:", receipt);
+        console.log("✅ Distribution successful!");
+        await refreshPools();
+        await refreshReputation();
+      } catch (error: any) {
+        console.error("Error distributing:", error);
+        if (error?.message?.includes("Not enough time has passed")) {
+          throw new Error("Round duration not completed yet. Please wait.");
+        } else if (error?.message?.includes("Pool not active")) {
+          throw new Error("This pool is not active yet or is already completed.");
+        }
+        throw error;
+      }
     },
     [contract, refreshPools, refreshReputation]
   );
@@ -382,17 +421,22 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     }
   }, [isConnected, isCorrectNetwork, refreshPools, refreshReputation]);
 
-  // Auto-refresh pools and reputation every 15 seconds
+  // Auto-refresh pools and reputation every 10 seconds
   useEffect(() => {
     if (!isConnected || !isCorrectNetwork) return;
 
+    console.log("🔄 Auto-refresh enabled (every 10 seconds)");
+    
     const interval = setInterval(() => {
-      console.log("Auto-refreshing pools and reputation...");
+      console.log("🔄 Auto-refreshing...");
       refreshPools();
       refreshReputation();
-    }, 5000); // 5 seconds
+    }, 10000); // 10 seconds
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log("🔄 Auto-refresh disabled");
+      clearInterval(interval);
+    };
   }, [isConnected, isCorrectNetwork, refreshPools, refreshReputation]);
 
   const value: Web3ContextType = {
