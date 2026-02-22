@@ -1,0 +1,247 @@
+@import "tailwindcss";
+
+:root {
+  --background: #020617;
+  --foreground: #f8fafc;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Smooth transitions for interactive elements */
+button, a {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Gradient backgrounds for cards */
+.gradient-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+}
+
+/* Aurora Background Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.8;
+    filter: blur(20px);
+  }
+  50% {
+    opacity: 1;
+    filter: blur(15px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 4s ease-in-out infinite;
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Status indicator animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-active {
+  animation: pulse 2s infinite;
+}
+
+/* Mobile responsive timeline */
+@media (max-width: 768px) {
+  .timeline-mobile {
+    flex-direction: column;
+  }
+  
+  .timeline-mobile .timeline-content {
+    width: 100% !important;
+    padding-left: 4rem !important;
+    padding-right: 1rem !important;
+    text-align: left !important;
+  }
+  
+  .timeline-mobile .timeline-node {
+    left: 1.5rem !important;
+    transform: none !important;
+  }
+  
+  .timeline-mobile .timeline-line {
+    left: 1.5rem !important;
+    transform: none !important;
+  }
+}
+
+/* Animated Gradient Wave Effects */
+@keyframes gradient-shift {
+  0%, 100% {
+    transform: translate(0%, 0%) scale(1);
+    opacity: 0.8;
+  }
+  33% {
+    transform: translate(10%, -5%) scale(1.1);
+    opacity: 0.9;
+  }
+  66% {
+    transform: translate(-5%, 5%) scale(1.05);
+    opacity: 0.85;
+  }
+}
+
+@keyframes gradient-shift-reverse {
+  0%, 100% {
+    transform: translate(0%, 0%) scale(1);
+    opacity: 0.7;
+  }
+  33% {
+    transform: translate(-8%, 5%) scale(1.08);
+    opacity: 0.8;
+  }
+  66% {
+    transform: translate(8%, -8%) scale(1.12);
+    opacity: 0.75;
+  }
+}
+
+.animate-gradient-shift {
+  animation: gradient-shift 15s ease-in-out infinite;
+}
+
+.animate-gradient-shift-reverse {
+  animation: gradient-shift-reverse 20s ease-in-out infinite;
+}
+
+/* Wave animation for curved bottom */
+@keyframes wave {
+  0%, 100% {
+    transform: translateX(0) scaleY(1);
+  }
+  50% {
+    transform: translateX(-25px) scaleY(1.05);
+  }
+}
+
+@keyframes wave-reverse {
+  0%, 100% {
+    transform: translateX(0) scaleY(1);
+  }
+  50% {
+    transform: translateX(25px) scaleY(0.95);
+  }
+}
+
+.animate-wave {
+  animation: wave 10s ease-in-out infinite;
+}
+
+.animate-wave-reverse {
+  animation: wave-reverse 15s ease-in-out infinite;
+}
+
+/* Gradient movement animations */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+    background-size: 200% 200%;
+  }
+  50% {
+    background-position: 100% 50%;
+    background-size: 200% 200%;
+  }
+}
+
+@keyframes gradient-xy {
+  0%, 100% {
+    background-position: 0% 0%;
+    background-size: 300% 300%;
+  }
+  25% {
+    background-position: 100% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 15s ease infinite;
+}
+
+.animate-gradient-xy {
+  animation: gradient-xy 20s ease infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s ease-in-out infinite;
+}
