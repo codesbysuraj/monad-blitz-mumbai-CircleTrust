@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useWeb3 } from "../context/Web3Context";
 import { useSearchParams } from "next/navigation";
 import { PoolDisplay } from "../lib/contract";
 import PageLayout from "../components/PageLayout";
 
-export default function Pools() {
+function PoolsContent() {
   const {
     isConnected,
     isCorrectNetwork,
@@ -528,5 +528,23 @@ export default function Pools() {
         </div>
       )}
     </PageLayout>
+  );
+}
+
+export default function Pools() {
+  return (
+    <Suspense fallback={
+      <PageLayout>
+        <div className="min-h-screen bg-slate-900 text-white p-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="animate-pulse text-center py-20">
+              <div className="text-gray-400">Loading pools...</div>
+            </div>
+          </div>
+        </div>
+      </PageLayout>
+    }>
+      <PoolsContent />
+    </Suspense>
   );
 }
