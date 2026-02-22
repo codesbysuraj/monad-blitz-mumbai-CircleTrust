@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "cd contracts && npx hardhat compile",
+    "deploy:local": "cd contracts && npx hardhat ignition deploy ignition/modules/CircleTrust.ts --network localhost",
+    "deploy:monad": "cd contracts && npx hardhat ignition deploy ignition/modules/CircleTrust.ts --network monadTestnet",
+    "node": "cd contracts && npx hardhat node",
+    "test": "cd contracts && npx tsx test/CircleTrust.ts"
   },
   "keywords": [],
   "author": "",
