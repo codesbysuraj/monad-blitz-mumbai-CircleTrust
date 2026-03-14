@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { useWeb3 } from "../context/Web3Context";
